@@ -1,0 +1,14 @@
+1. Create and instantiate your SQL Server object
+Import-Module SQLPS -DisableNameChecking
+#default SQL Server 2014 instance, ie servername
+#if the default instance is in your local machine,
+#you can simply type "localhost"
+$instance = "ROGUE" #or localhost
+#instantiate an SMO server object
+$server = New-Object ` # use backtick to start a new line
+-TypeName Microsoft.SqlServer.Management.Smo.Server `
+-ArgumentList $instance
+#list some server properties
+$server |
+Select Name, Version, Status, `
+ConnectionContext, ComputerNamePhysicalNetBIOS
