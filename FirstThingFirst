@@ -1,0 +1,5 @@
+In the windows cmd (runas admin):
+
+powershell Set-ExecutionPolicy RemoteSigned
+
+and then depress Enter
