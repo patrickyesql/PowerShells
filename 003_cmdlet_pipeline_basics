@@ -1,0 +1,15 @@
+Get-Service | Select-Object Name, Status | Sort-Object Status -Descending
+
+$currdate = (Get-Date -Format "yyyyMMdd_hhmmtt")
+$servers = @("ROGUE", "CEREBRO") # way to initiate an array
+#save each server's running services into a file
+$servers |
+ForEach-Object {
+$computername = $_ #Assign each iterated value to the variable
+Write-Host "`n`nProcessing $computername" # `back tick 
+$filename = "C:\Temp\$($computername) - $($currdate).csv"
+Get-Service -ComputerName $computername |
+Where-Object -Property Status -EQ "Running" |
+Select-Object Name, DisplayName |
+Export-Csv -Path $filename -NoTypeInformation
+}
