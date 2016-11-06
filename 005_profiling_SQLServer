@@ -1,0 +1,95 @@
+1. Get server processor info
+
+#current server name
+#this can be the machine name (in my case ROGUE)
+#or simply localhost, if the default instance is installed
+$servername = "winserver2008" #or localhost
+Get-WmiObject -Class Win32_ComputerSystem `
+-ComputerName $servername |
+Select-Object Name,
+Domain,
+NumberOfProcessors,
+NumberOfLogicalProcessors |
+Format-List
+
+2. Get server memory info
+Get-WmiObject -Class Win32_OperatingSystem `
+-ComputerName $servername |
+Get-Member -MemberType Property |
+Where-Object Name -Like "*Mem*" |
+Select-Object Name
+
+Get-WmiObject -Class Win32_OperatingSystem -ComputerName $servername |Select-Object @{Name="TotalVisibleMemorySize (GB)";
+Expression={"{0:N1}" -f (($_.TotalVisibleMemorySize)/1024/1024)}},
+@{Name="FreePhysicalMemory (GB)";Expression={"{0:N1}" -f (($_.FreePhysicalMemory)/1024/1024)}},
+@{Name="MemoryUsage %";Expression={ "{0:N2}" -f ((($_.TotalVisibleMemorySize - $_.FreePhysicalMemory)*100)/ $_.TotalVisibleMemorySize) }} |
+Format-List
+
+3. Get server disk info
+
+Get-WmiObject -Class Win32_LogicalDisk `
+-ComputerName $servername |
+Select-Object @{Name="DeviceID";Expression={$_.DeviceID}},
+@{Name="DriveType";
+Expression={switch ($_.DriveType)
+{
+0 {"Unknown"}
+1 {"No Root Directory"}
+2 {"Removable Disk"}
+3 {"Local Disk"}
+4 {"Network Drive"}
+5 {"Compact Disc"}
+6 {"RAM Disk"}
+}};
+},
+@{Name="Size (GB)";Expression={"{0:N1}" -f($_.Size/1GB)}},
+@{Name="Free Space (GB)";Expression={"{0:N1}" -f($_.FreeSpace/1GB)}},
+@{Name="Free Space (%)";
+Expression={
+if ($_.Size -gt 0)
+{
+"{0:P0}" -f($_.FreeSpace/$_.Size)
+}
+else
+{
+0
+}
+}
+} |Format-Table -AutoSize
+
+4. Check network settings
+
+Get-WmiObject -Class Win32_NetworkAdapterConfiguration `
+-ComputerName $servername `
+-Filter IPEnabled=True |
+Select-Object Description, DHCPEnabled,
+IPEnabled, IPAddress,
+MACAddress
+
+
+5. List all sqlserver instances
+
+#below should be a single line of code
+$managedComputer = New-Object "Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer" $servername
+#list SQL Server instances
+$managedComputer.ServerInstances |
+Select-Object Name, State, ServerProtocols, Urn |
+Format-List
+
+
+6. List all service accts
+$managedComputer.Services |
+Select-Object Name, ServiceAccount, DisplayName |
+Format-Table -AutoSize
+
+7. Error Logs
+#Last 5 log
+$server.ReadErrorLog() |
+Select-Object LogDate, ProcessInfo, Text, HasErrors -Last 5 |
+Format-List
+
+#Last 5 errors
+$server.ReadErrorLog() |Where-Object HasErrors -EQ $true
+Select-Object LogDate, ProcessInfo, Text, HasErrors -Last 5 |
+Format-List
+
