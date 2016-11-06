@@ -1,0 +1,6 @@
+$database = "Chinook"
+$schema = "dbo"
+$table = "Album"
+$filename = "C:\Temp\results.txt"
+$bcp = "bcp $($database).$($schema).$($table) out $filename -T -c"
+Invoke-Expression $bcp  # same as using !! in SSMS
