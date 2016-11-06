@@ -1,0 +1,9 @@
+Write-Host 'Hello World!'
+
+Get-Help is your Friend!
+Get-Cmd can hint you useful cmdlets
+Get-Alias -Definition <definition> Provides shorthand cmdlets!
+Get-Service -Na *SQL*   ##Get all Service whose name contains 'SQL'
+
+
+
