@@ -1,0 +1,88 @@
+1 List Databases and tables
+Import-Module SQLPS -DisableNameChecking
+#current server name
+$servername = "winsrever2008"
+#below should be a single line of code
+$server = New-Object "Microsoft.SqlServer.Management.Smo.Server" $servername
+
+#with SQL authentication, we need
+#to supply the SQL Login and password
+$server.ConnectionContext.LoginSecure=$false;
+$credential = Get-Credential sa
+$server.ConnectionContext.set_Login($credential.UserName)
+$server.ConnectionContext.set_SecurePassword($credential.Password)
+
+
+#create empty array
+$result = @()
+$server.Databases |
+Where-Object IsSystemObject -eq $false |
+ForEach-Object {
+$db = $_
+$object = [PSCustomObject] @{
+Name = $db.Name
+CreateDate = $db.CreateDate
+RecoveryModel = $db.RecoveryModel
+NumTables = $db.Tables.Count
+NumUsers = $db.Users.Count
+NumSP = $db.StoredProcedures.Count
+NumUDF = $db.UserDefinedFunctions.Count
+}
+$result += $object
+}
+$result |
+Format-Table -AutoSize
+
+
+3. Enumerate Processes
+$server.EnumProcesses() |
+Where-Object IsSystem -eq $false |
+Select-Object Spid, Database,
+IsSystem, Login, Status,
+Cpu, MemUsage, Program |
+Format-Table -AutoSize
+
+
+4.Check index fragmentations
+Import-Module SQLPS -DisableNameChecking
+#current server name
+$servername = "ROGUE"
+$server = New-Object "Microsoft.SqlServer.Management.Smo.
+Server" $servername
+$dbname = "Chinook"
+$result = @()
+$db = $server.Databases[$dbname]
+$db.Tables |
+ForEach-Object {
+$table = $_
+$table.Indexes |
+Sort-Object -Property Name |
+ForEach-Object {
+$index = $_
+$frag = $index.EnumFragmentation()
+$object = [PSCustomObject] @{
+Table = $table.Name
+Index = $index.Name
+Type = $frag.IndexType
+Pages = $frag.Pages
+"AvgFragmentation %" = "{0:N2}" -f ($frag.AverageFragmentation)
+"SpaceUsed(KB)" = $index.SpaceUsed
+}
+$result += $object
+}
+}
+$result |
+Format-Table
+
+if ($indexFrag.AverageFragmentation -ge 10 -and
+$indexFrag.AverageFragmentation -le 30 -and $indexFrag.Pages
+-ge 1000)
+{
+$index.Reorganize()
+}
+elseif ($indexFrag.AverageFragmentation -ge 30 -and
+$indexFrag.Pages -ge 1000)
+{
+$index.Rebuild()
+}
+
